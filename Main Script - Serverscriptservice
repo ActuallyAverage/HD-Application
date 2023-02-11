@@ -17,7 +17,7 @@ local target
 local Damage = 1
 local DamageChanged = false
 
-local CombatAnims = {
+local CombatAnims = { 
 
 	["Ground"] = {
 
@@ -40,19 +40,19 @@ local CombatAnims = {
 
 }
 
-local function createHitbox(PChar: Model, Combo: number)
+local function createHitbox(PChar: Model, Combo: number) --Create a function
 	
-	local Fired = false
+	local Fired = false --Changes fired to false to be used as a cd
 	
-	local Overlap = OverlapParams.new()
-	Overlap.FilterType = Enum.RaycastFilterType.Blacklist
+	local Overlap = OverlapParams.new() --Creates overlap params 
+	Overlap.FilterType = Enum.RaycastFilterType.Blacklist --Makes a blacklist
 	Overlap.FilterDescendantsInstances = {
 		PChar:GetChildren()
-	}
+	} --Table of instances to ignore
 	
-	local Plr = game.Players:GetPlayerFromCharacter(PChar)
+	local Plr = game.Players:GetPlayerFromCharacter(PChar)  --gets the plr
 	
-	local Hitbox = Instance.new("Part")
+	local Hitbox = Instance.new("Part") --creates a part and names it hitbox
 	Hitbox.Size = Vector3.new(4,5,4)
 	Hitbox.CanCollide = false
 	Hitbox.Anchored = false
@@ -61,132 +61,132 @@ local function createHitbox(PChar: Model, Combo: number)
 	Hitbox.Color = Color3.fromRGB(162, 0, 3)
 	Hitbox.Parent = PChar
 	
-	local Weld = Instance.new("WeldConstraint")
+	local Weld = Instance.new("WeldConstraint") --creates a weld to weld the htbox to the character
 	Weld.Part0 = Hitbox
 	Weld.Part1 = PChar.HumanoidRootPart
 	Weld.Parent = Hitbox
 	
-	local Parts = workspace:GetPartsInPart(Hitbox,Overlap)
+	local Parts = workspace:GetPartsInPart(Hitbox,Overlap) --finds the parts in the hitbox
 	
-	for i, v in ipairs(Parts) do
+	for i, v in ipairs(Parts) do --iterates through all the values in the "Parts" table
 		
-		if v.Parent:FindFirstChild("Humanoid") then
+		if v.Parent:FindFirstChild("Humanoid") then --checks if the value in the table has a humanoid 
 			
-			if Combo == 5 then
+			if Combo == 5 then --if its the last combo
 				
-				if DamageChanged == false then
-					DamageChanged = true
-					Damage += (Damage * Combo)/2
+				if DamageChanged == false then --if the damage was not alreadychanged then
+					DamageChanged = true --damage was changedd
+					Damage += (Damage * Combo)/2 --the damage multiplied byt the combo then divided by 2 is added to the original damage
 				end
 
 			else
 				
-				if DamageChanged == false then
-					DamageChanged = true
-					Damage = Combo
+				if DamageChanged == false then --if the damage wasnt already changed
+					DamageChanged = true --the damge was changed
+					Damage = Combo --the damge value will be equal to the combo value
 				end
 				
 				
 			end
 			
-			target = v.Parent:FindFirstChild("Humanoid")
-			target:TakeDamage(Damage)
+			target = v.Parent:FindFirstChild("Humanoid") --sets the target varible to the humanoid found
+			target:TakeDamage(Damage) --deals damage to the same humanoid
 			
-			if ((PChar:FindFirstChild("Torso").Position) - (target.Parent:FindFirstChild("Torso").Position)).Magnitude <= 10 and Fired == false then
-				Fired = true
-				Remote:FireClient(Plr, "Hitbox", target, Damage)
+			if ((PChar:FindFirstChild("Torso").Position) - (target.Parent:FindFirstChild("Torso").Position)).Magnitude <= 10 and Fired == false then --if the space between both characters' torso is less than 1- studs then
+				Fired = true --sets the fired variable to true
+				Remote:FireClient(Plr, "Hitbox", target, Damage) --fires a request to the client with the datavalue "Hittbox" and others
 			end
 			
 		else 
-			target = nil
+			target = nil --removes the target if none was found 
 		end
 		
 	end
 	
-	DamageChanged = false
-	Fired = false
-	Debris:AddItem(Hitbox,0.40)
+	DamageChanged = false --sets damagechanged to false
+	Fired = false --sets fired to false
+	Debris:AddItem(Hitbox,0.40) --deletes the hitbox after 0.4 secs
 	
 	
 end
 
-local function knockback(target,char)
+local function knockback(target,char) --knockback function
 	
-	local success, errorMess = pcall(function()
-		local Echar = target.Parent
-		local torso = Echar:FindFirstChild("Torso")
+	local success, errorMess = pcall(function() --uses pcal to not crash the script when it detects errors
+		local Echar = target.Parent --sets the enemy character
+		local torso = Echar:FindFirstChild("Torso") -- finds the enmy torso
 		
-		if Echar and char then
-			local dir = (torso.Position - char:WaitForChild("Torso").Position).Unit
-			local att = Instance.new("Attachment", torso)
-			local force = Instance.new("VectorForce", torso)
-			force.Attachment0 = att
-			force.Force = (dir * Vector3.new(0,1,0)).Unit * 100
-			force.RelativeTo = Enum.ActuatorRelativeTo.World
-			target.PlatformStand = true
+		if Echar and char then --if both are found then
+			local dir = (torso.Position - char:WaitForChild("Torso").Position).Unit --chanes the chars torso to a unit
+			local att = Instance.new("Attachment", torso) --adds an attachment to the torso
+			local force = Instance.new("VectorForce", torso) --creates a vectorforsein the same torso
+			force.Attachment0 = att --sets the force's first atachment to 0
+			force.Force = (dir * Vector3.new(0,1,0)).Unit * 100 --calculates the amount of force
+			force.RelativeTo = Enum.ActuatorRelativeTo.World --sets the force relative to the world
+			target.PlatformStand = true --sets the enemys humanoid to a plaformstand form so they cant move 
 			
 		end
 	end)
 	
 	
-	if success then
-		print("Target Found")
-	elseif errorMess then
-		warn(errorMess)
+	if success then --if no errors then
+		print("Target Found") --print
+	elseif errorMess then --if errors then
+		warn(errorMess) --warn
 	end
 end
 
-Remote.OnServerEvent:Connect(function(plr, CombatType, combo)
+Remote.OnServerEvent:Connect(function(plr, CombatType, combo) --if a request is found from a client then
 	
 	--Variables 
 	local char = plr.Character
 	local Hum = char:FindFirstChild("Humanoid")
 	
-	if CombatType == "Ground" then	
+	if CombatType == "Ground" then	--if the datavalue is "Ground"
 		
-		if combo <= 4 then
+		if combo <= 4 then --if the combo hasnt ended then
 			
-			local animation = Instance.new("Animation")
+			local animation = Instance.new("Animation") --create an animation
 			animation.AnimationId = CombatAnims["Ground"][combo]
 			animation.Parent = Hum
 
-			local anim = Hum:LoadAnimation(animation)
+			local anim = Hum:LoadAnimation(animation) --load the animation
 			anim:Play()
 			
-			anim.Stopped:Connect(function()
+			anim.Stopped:Connect(function() --if the animation stopped playing
 				
-				createHitbox(char, combo)
+				createHitbox(char, combo) --call the hitbox function
 
-				if target then
-					Punch:Play()
-					target = nil
+				if target then --if a target was found
+					Punch:Play() --play the sound
+					target = nil -- then sets target to nil
 				else
-					Punchmiss:Play()
+					Punchmiss:Play() --play a different sound
 				end
 				
 			end)
 
-			print(combo)
+			print(combo) --print what combo we in
 			
-		else
+		else --if combo ended 
 			
-			local animation = Instance.new("Animation")
+			local animation = Instance.new("Animation") --create an animation
 			animation.AnimationId = CombatAnims["Ground"][combo]
 			animation.Parent = Hum
 
-			local anim = Hum:LoadAnimation(animation)
+			local anim = Hum:LoadAnimation(animation) --load that animation
 			anim:Play()
 
-			anim.Stopped:Connect(function()
+			anim.Stopped:Connect(function() --if the animation finished playing
 
-				createHitbox(char, combo)
+				createHitbox(char, combo) --cal the hitbox function
 
-				if target then
-					HeavyPunch:Play()
-					Damage = 1
-					target = nil
+				if target then --if a target was found
+					HeavyPunch:Play() --play the heavyhit sound
+					Damage = 1 --set dmg to 1
+					target = nil --removes the target 
 				else
-					Punchmiss:Play()
+					Punchmiss:Play() --plays the missed punch sound
 				end
 
 			end)
@@ -196,8 +196,10 @@ Remote.OnServerEvent:Connect(function(plr, CombatType, combo)
 			
 		end
 		
-	elseif CombatType == "Aerial" then
+	elseif CombatType == "Aerial" then --if its aerial combat theb
 		
 	end
 	
 end)
+
+--Actuality #3086
