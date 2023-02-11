@@ -1,0 +1,203 @@
+--Services
+local RS = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
+
+--Variables
+local RemotesFolder = RS:FindFirstChild("Remotes")
+local Remote = RemotesFolder:FindFirstChild("CombatEvent")
+local Fx = game.Workspace.FX
+local SFX = Fx.SFX
+local Punch = SFX:WaitForChild("Punch")
+local HeavyPunch = SFX:WaitForChild("Heavy Hard Punch Hit")
+local Punchmiss = SFX:WaitForChild("Punch Swing ")
+local target 
+
+--Config
+
+local Damage = 1
+local DamageChanged = false
+
+local CombatAnims = {
+
+	["Ground"] = {
+
+		'rbxassetid://8313757340', --1
+		'rbxassetid://8313761363', --2
+		'rbxassetid://8313766170', --3
+		'rbxassetid://8313769663', --4
+		'rbxassetid://8313774816', --5
+		'rbxassetid://8313778158', --Block
+		'rbxassetid://8313751640', --Idle
+		'rbxassetid://8313787787', --Walk
+		'rbxassetid://8313798399' --M2
+
+	};
+
+	["Aerial"] = {
+
+
+	}
+
+}
+
+local function createHitbox(PChar: Model, Combo: number)
+	
+	local Fired = false
+	
+	local Overlap = OverlapParams.new()
+	Overlap.FilterType = Enum.RaycastFilterType.Blacklist
+	Overlap.FilterDescendantsInstances = {
+		PChar:GetChildren()
+	}
+	
+	local Plr = game.Players:GetPlayerFromCharacter(PChar)
+	
+	local Hitbox = Instance.new("Part")
+	Hitbox.Size = Vector3.new(4,5,4)
+	Hitbox.CanCollide = false
+	Hitbox.Anchored = false
+	Hitbox.Transparency = 1
+	Hitbox.CFrame = PChar.HumanoidRootPart.CFrame * CFrame.new(0,0,-3)
+	Hitbox.Color = Color3.fromRGB(162, 0, 3)
+	Hitbox.Parent = PChar
+	
+	local Weld = Instance.new("WeldConstraint")
+	Weld.Part0 = Hitbox
+	Weld.Part1 = PChar.HumanoidRootPart
+	Weld.Parent = Hitbox
+	
+	local Parts = workspace:GetPartsInPart(Hitbox,Overlap)
+	
+	for i, v in ipairs(Parts) do
+		
+		if v.Parent:FindFirstChild("Humanoid") then
+			
+			if Combo == 5 then
+				
+				if DamageChanged == false then
+					DamageChanged = true
+					Damage += (Damage * Combo)/2
+				end
+
+			else
+				
+				if DamageChanged == false then
+					DamageChanged = true
+					Damage = Combo
+				end
+				
+				
+			end
+			
+			target = v.Parent:FindFirstChild("Humanoid")
+			target:TakeDamage(Damage)
+			
+			if ((PChar:FindFirstChild("Torso").Position) - (target.Parent:FindFirstChild("Torso").Position)).Magnitude <= 10 and Fired == false then
+				Fired = true
+				Remote:FireClient(Plr, "Hitbox", target, Damage)
+			end
+			
+		else 
+			target = nil
+		end
+		
+	end
+	
+	DamageChanged = false
+	Fired = false
+	Debris:AddItem(Hitbox,0.40)
+	
+	
+end
+
+local function knockback(target,char)
+	
+	local success, errorMess = pcall(function()
+		local Echar = target.Parent
+		local torso = Echar:FindFirstChild("Torso")
+		
+		if Echar and char then
+			local dir = (torso.Position - char:WaitForChild("Torso").Position).Unit
+			local att = Instance.new("Attachment", torso)
+			local force = Instance.new("VectorForce", torso)
+			force.Attachment0 = att
+			force.Force = (dir * Vector3.new(0,1,0)).Unit * 100
+			force.RelativeTo = Enum.ActuatorRelativeTo.World
+			target.PlatformStand = true
+			
+		end
+	end)
+	
+	
+	if success then
+		print("Target Found")
+	elseif errorMess then
+		warn(errorMess)
+	end
+end
+
+Remote.OnServerEvent:Connect(function(plr, CombatType, combo)
+	
+	--Variables 
+	local char = plr.Character
+	local Hum = char:FindFirstChild("Humanoid")
+	
+	if CombatType == "Ground" then	
+		
+		if combo <= 4 then
+			
+			local animation = Instance.new("Animation")
+			animation.AnimationId = CombatAnims["Ground"][combo]
+			animation.Parent = Hum
+
+			local anim = Hum:LoadAnimation(animation)
+			anim:Play()
+			
+			anim.Stopped:Connect(function()
+				
+				createHitbox(char, combo)
+
+				if target then
+					Punch:Play()
+					target = nil
+				else
+					Punchmiss:Play()
+				end
+				
+			end)
+
+			print(combo)
+			
+		else
+			
+			local animation = Instance.new("Animation")
+			animation.AnimationId = CombatAnims["Ground"][combo]
+			animation.Parent = Hum
+
+			local anim = Hum:LoadAnimation(animation)
+			anim:Play()
+
+			anim.Stopped:Connect(function()
+
+				createHitbox(char, combo)
+
+				if target then
+					HeavyPunch:Play()
+					Damage = 1
+					target = nil
+				else
+					Punchmiss:Play()
+				end
+
+			end)
+
+			
+			print(combo)
+			
+		end
+		
+	elseif CombatType == "Aerial" then
+		
+	end
+	
+end)
