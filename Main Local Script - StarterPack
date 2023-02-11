@@ -18,53 +18,53 @@ local normalcooldown = 0.35
 local cooldown = 1
 local lastm1End
 
-local debounce = false
-Combat.RequiresHandle = false
+local debounce = false --Cooldown in a way
+Combat.RequiresHandle = false --Makes it usable without a handle
 
-Combat.Activated:Connect(function()
+Combat.Activated:Connect(function() --When it receives input
 	
-	UIS.InputBegan:Connect(function(input, gameprocessed)
+	UIS.InputBegan:Connect(function(input, gameprocessed) --Uses Userinputservice for more application
 		
-		if not gameprocessed then
+		if not gameprocessed then -- Not interacing with a gui eg chat
 			
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				if debounce == false then
-					debounce = true
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then - if the input is the leftmousebuton
+				if debounce == false then --if not on cooldown
+					debounce = true --put it on cooldown
 				
-					if UIS:IsKeyDown("Space") and combo == 4 then
-						CanAir = false
+					if UIS:IsKeyDown("Space") and combo == 4 then -- if the space key is beeing held while clicking and its on the combo variable is on the value 4
+						CanAir = false --Can nolonger use air combo 
 						
-						Remote:FireServer("Aerial")
+						Remote:FireServer("Aerial") --Fires a request using the remote event to the server
 						
-						task.wait(aerialcooldown)
-						CanAir = true
+						task.wait(aerialcooldown) --wait air cooldown
+						CanAir = true --can now use air combo
 						
 					else 
 						
-						if combo >= 1 and combo <= 4 then
-							local currenttime = os.time()
+						if combo >= 1 and combo <= 4 then -- if combo started then
+							local currenttime = os.time() --get time the combo happens
 							
-							if currenttime - lastm1End < 2 then
-								lastm1End = currenttime
-								combo += 1
-								Remote:FireServer("Ground", combo)
+							if currenttime - lastm1End < 2 then --checks if it has been less than 2 seconds since the time the last combo started
+								lastm1End = currenttime --sets the lastm1end time to the current time cause that is whenit ended idk how to expect it
+								combo += 1 --ads the combo value
+								Remote:FireServer("Ground", combo) --fires a request again this time under the "Ground" type
 							else
-								combo = 0
+								combo = 0 -If more than 2 secs passed then combo sets back to the beginning
 							end
 						
-						elseif combo < 1 then
-							lastm1End = os.time()
-							combo += 1
-							Remote:FireServer("Ground", combo)
+						elseif combo < 1 then --if the combo hasnt even started then
+							lastm1End = os.time() --sets the last m1 end to the time it is started
+							combo += 1 -- ads combo value plus 1
+							Remote:FireServer("Ground", combo) --same thing as before
 						else
-							combo = 0
-							task.wait(cooldown)
+							combo = 0 --if none of the above or in other words combo ended then combo goes to 0 
+							task.wait(cooldown) --then the cooldown happens
 						end
 						
 					end
 					
-					task.wait(normalcooldown)
-					debounce = false
+					task.wait(normalcooldown) --cooldown between punches in the combo
+					debounce = false --resets the value to false so punches arent spammed in less than a millisecond lol
 				end
 				
 			end
@@ -75,22 +75,22 @@ Combat.Activated:Connect(function()
 	
 end)
 
-Combat.Equipped:Connect(function()
+Combat.Equipped:Connect(function() --ignore this i havent finished it
 	
 	Remote:FireServer("Equipped")
 	
 end)
 
-Remote.OnClientEvent:Connect(function(Type, Target, Dmg)
+Remote.OnClientEvent:Connect(function(Type, Target, Dmg) --If a request is received via a remote event from the server then
 	
-	local Called = false
+	local Called = false -- kind of a cooldown
 	
-	if Type == "Hitbox" and Called == false then
+	if Type == "Hitbox" and Called == false then --if the request has a value associated to it from the server called "Hitbox" and not on called before then
 		
-		Called = true
-		local ETorso = Target.Parent:FindFirstChild("Torso")
+		Called = true --has been called
+		local ETorso = Target.Parent:FindFirstChild("Torso") --enemytorso variable
 		
-		local DmgGui = Instance.new("BillboardGui", ETorso)
+		local DmgGui = Instance.new("BillboardGui", ETorso) --create a billboardgui for a damage indicator
 		DmgGui.Name = "DmgIndicator"
 		DmgGui.Size = UDim2.new(3,0,3,0)
 		DmgGui.LightInfluence = 0
@@ -99,7 +99,7 @@ Remote.OnClientEvent:Connect(function(Type, Target, Dmg)
 		DmgGui.AlwaysOnTop = true
 		DmgGui.Adornee = ETorso
 		
-		local Frame = Instance.new("Frame", DmgGui)
+		local Frame = Instance.new("Frame", DmgGui) --add a frame to it
 		Frame.Name = "Frame"
 		Frame.AnchorPoint = Vector2.new(0.5,0.5)
 		Frame.BackgroundTransparency = 1
@@ -107,7 +107,7 @@ Remote.OnClientEvent:Connect(function(Type, Target, Dmg)
 		Frame.Size = UDim2.new(1,0,1,0)
 		Frame.BorderSizePixel = 0
 		
-		local Text = Instance.new("TextLabel",Frame)
+		local Text = Instance.new("TextLabel",Frame) --then put the text that spawns in random positions in the frame
 		Text.Name = "DmgText"
 		Text.AnchorPoint = Vector2.new(0.5,0.5)
 		Text.BackgroundTransparency = 1
@@ -121,11 +121,11 @@ Remote.OnClientEvent:Connect(function(Type, Target, Dmg)
 		Text.Text = "-"..Dmg
 		Text.Position = UDim2.new((math.random(1,8)/10),0,(math.random(1,8)/10),0)
 		
-		task.wait(0.3)
-		DmgGui:Destroy()
+		task.wait(0.3) --wait 0.3 seconds
+		DmgGui:Destroy() --destroy the billboard gui
 		
 	end
 	
-	Called = false
+	Called = false --set the called varible to false
 	
 end)
