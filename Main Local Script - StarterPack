@@ -1,0 +1,131 @@
+--Services
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("ReplicatedStorage")
+
+--Variables
+local RemotesFolder = RS:FindFirstChild("Remotes")
+local Remote = RemotesFolder:FindFirstChild("CombatEvent")
+
+local plr = game.Players.LocalPlayer
+local char = plr.Character
+local Combat = script.Parent
+
+--Config
+local combo = 0
+local CanAir = true
+local aerialcooldown = 5
+local normalcooldown = 0.35
+local cooldown = 1
+local lastm1End
+
+local debounce = false
+Combat.RequiresHandle = false
+
+Combat.Activated:Connect(function()
+	
+	UIS.InputBegan:Connect(function(input, gameprocessed)
+		
+		if not gameprocessed then
+			
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				if debounce == false then
+					debounce = true
+				
+					if UIS:IsKeyDown("Space") and combo == 4 then
+						CanAir = false
+						
+						Remote:FireServer("Aerial")
+						
+						task.wait(aerialcooldown)
+						CanAir = true
+						
+					else 
+						
+						if combo >= 1 and combo <= 4 then
+							local currenttime = os.time()
+							
+							if currenttime - lastm1End < 2 then
+								lastm1End = currenttime
+								combo += 1
+								Remote:FireServer("Ground", combo)
+							else
+								combo = 0
+							end
+						
+						elseif combo < 1 then
+							lastm1End = os.time()
+							combo += 1
+							Remote:FireServer("Ground", combo)
+						else
+							combo = 0
+							task.wait(cooldown)
+						end
+						
+					end
+					
+					task.wait(normalcooldown)
+					debounce = false
+				end
+				
+			end
+			
+		end
+		
+	end)
+	
+end)
+
+Combat.Equipped:Connect(function()
+	
+	Remote:FireServer("Equipped")
+	
+end)
+
+Remote.OnClientEvent:Connect(function(Type, Target, Dmg)
+	
+	local Called = false
+	
+	if Type == "Hitbox" and Called == false then
+		
+		Called = true
+		local ETorso = Target.Parent:FindFirstChild("Torso")
+		
+		local DmgGui = Instance.new("BillboardGui", ETorso)
+		DmgGui.Name = "DmgIndicator"
+		DmgGui.Size = UDim2.new(3,0,3,0)
+		DmgGui.LightInfluence = 0
+		DmgGui.MaxDistance = 30
+		DmgGui.ResetOnSpawn = true
+		DmgGui.AlwaysOnTop = true
+		DmgGui.Adornee = ETorso
+		
+		local Frame = Instance.new("Frame", DmgGui)
+		Frame.Name = "Frame"
+		Frame.AnchorPoint = Vector2.new(0.5,0.5)
+		Frame.BackgroundTransparency = 1
+		Frame.Position = UDim2.new(0.5,0,0.5,0)
+		Frame.Size = UDim2.new(1,0,1,0)
+		Frame.BorderSizePixel = 0
+		
+		local Text = Instance.new("TextLabel",Frame)
+		Text.Name = "DmgText"
+		Text.AnchorPoint = Vector2.new(0.5,0.5)
+		Text.BackgroundTransparency = 1
+		Text.BorderSizePixel = 0
+		Text.Size = UDim2.new(0.5,0,0.55,0)
+		Text.Font = Enum.Font.Arcade
+		Text.TextColor3 = Color3.fromRGB(252,0,8)
+		Text.TextScaled = true
+		Text.TextStrokeColor3 = Color3.fromRGB(181,181,181)
+		Text.TextStrokeTransparency = 0
+		Text.Text = "-"..Dmg
+		Text.Position = UDim2.new((math.random(1,8)/10),0,(math.random(1,8)/10),0)
+		
+		task.wait(0.3)
+		DmgGui:Destroy()
+		
+	end
+	
+	Called = false
+	
+end)
